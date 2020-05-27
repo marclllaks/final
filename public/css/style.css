@@ -55,5 +55,18 @@ input{
 
 input[type=text]:focus{
   border: none;
-  border-bottom: 2px solid brown; 
+  border-bottom: 2px solid brown;
+}
+
+.athuzva{
+  text-decoration: line-through;
+}
+
+.hidden{
+  display:none;
+}
+
+.btn{
+  position: relative;
+  left: 55%;
 }

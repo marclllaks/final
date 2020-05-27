@@ -1,89 +1,60 @@
 (ns app.views
-  (:require [app.state :refer [state]]))
+  (:require [reagent.core :refer [atom]]))
+
+(defonce state (atom {0 1}))
+(defonce doboz (atom {}))
+
+(def feladatok (atom []))
+
+(defn atom-input [value]
+  [:input {:type "text"
+           :value @value :placeholder "Ide írj..."
+           :on-change #((reset! value (-> % .-target .-value)))}])
 
 
-(defn increment []
-  (swap! state update-in [:count] inc))
-
-(defn decrement []
-  (swap! state update-in [:count] dec))
-
-  (defn atom-input [value]
-    [:input {:type "text"
-             :value @value :placeholder "Ide írj..."
-             :on-change #((reset! value (-> % .-target .-value))(swap! state update-in [:doboz] (constantly 0)))}])
+(defn torles [valt]
+  (reset! valt ""))
 
 
-  (defn torles
-    [valt]
-    (reset! valt "")
-    (swap! state update-in [:doboz] (constantly 0))
-    (js/alert "Törölve!"))
+(defn mentes [szoveg]
 
-  (defn elvegezve
-    []
-    (if (= 1 (get @state :doboz)) (swap! state update-in [:doboz] dec) (swap! state update-in [:doboz] inc)))
+      (swap! feladatok conj {:nev @szoveg :pipa false})
+      (torles szoveg))
+    ; (reset! szoveg "")))
 
+(defn bepipal [id]
+  (if (= 1 (@doboz id))
+    (swap! doboz update-in (constantly @id) (constantly 0))
+    (swap! doboz update-in (constantly @id) (constantly 1))))
 
-(defn app3
-  []
-  (let [szoveg (reagent.core/atom "foo")]
-  [:div [:p "Add meg a feladatot!"]
-  [:input {:type "text" :placeholder "Ide írj..." :on-change #(reset! szoveg :value)}]
-  ]))
+(defn elvegezve []
+  (if (= 1 (get @state :doboz))
+    (swap! state update-in [:doboz] dec)
+    (swap! state update-in [:doboz] inc)))
 
-
-
-  (defonce valami (atom {:counter 100}))
-
-
-
-
-             (defn app1 []
-               (let [val (reagent.core/atom "foo")]
-                 (fn []
-                   [:div
-                    [:p "The value is now: " @val]
-                    [:p "Change it here: " [atom-input val]]])))
+(defn feladattorol
+      [param]
+      (reset! feladatok (into [] (concat (subvec @feladatok 0 param)
+                                         (subvec @feladatok (inc param))))))
 
 
 
-(defn app2
-  []
-
-  [:div
-   [:h1.title "Final step"]
-   [:div.wrapper
-    [:button.btn {:on-click #(decrement)} "-"]
-    [:p.counter (+ (get @state :count) (get @valami :counter))]
-    [:button.btn {:on-click #(increment)} "+"]
-    ]
-    [:div [:button.btn {:on-click #(app1)} "Szöveges feladat"]]
-
-
-
-    [:div.footer [:a {:href "https://www.notion.so/Clojurescript-Roadmap-e752043530e649f7a7142ae8d671ec15" :target "_blank"} "Roadmap"]" | "[:a {:href "https://cljs.info/cheatsheet" :target "_blank"} "CheatSheet"]]])
-
-
-
-
-
-    (defn app
-      []
-      (let [valtozo (reagent.core/atom "")]
-      (fn []
-      [:div
-
+(defn app []
+  (let [valtozo (atom "")]
+   (fn []
+     [:div
       [:h1.title "Final step"]
-      [:h2.title "1. szöveges feladat"]
-      [:p "Hozz létre egy szöveges feladatot!"]
-      [:p [atom-input valtozo]]
-      [:p.szoveges @valtozo]
-      [:p "Elvégezve? " [:input {:type "checkbox" :checked (= 1 (get @state :doboz)) :id "jelolo" :on-click #(elvegezve)}]]
-      (if (= 1 (get @state :doboz)) [:button.btn {:on-click #(torles valtozo)} "Törlés"])
+      [:p
+       [:input {:type "text"
+                :value @valtozo
+                :placeholder "Ide írj..."
+                :on-change #(reset! valtozo (-> % .-target .-value))}]
+       [:button {:on-click #(when (not (empty? @valtozo)) (mentes valtozo))}
+              "Mentés"]]
+      [:p "Feladatok száma: " (count @feladatok)]
 
-      [:div.footer [:a {:href "https://www.notion.so/Clojurescript-Roadmap-e752043530e649f7a7142ae8d671ec15" :target "_blank"} "Roadmap"]" | "[:a {:href "https://cljs.info/cheatsheet" :target "_blank"} "CheatSheet"]]
-
-      ]
-      ))
-      )
+      (for [i (range (count @feladatok))]
+        (let [feladat (nth @feladatok i)]
+          [:p {:class [(when (feladat :pipa) "athuzva")]} (feladat :nev)
+           [:input {:type "checkbox" :on-click #(swap! feladatok update-in [i :pipa] not) :checked (feladat :pipa)}]
+           [:button {:class [(when (not (feladat :pipa)) "hidden")] :on-click #(feladattorol i)} "Törlés"]]))])))
